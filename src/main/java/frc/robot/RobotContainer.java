@@ -102,7 +102,7 @@ public class RobotContainer {
       SmartDashboard.putData(stateMachineAutoBalance);
 
       // Register Named Commands for Path Planner
-      registNamedCommands();
+      registerNamedCommands();
 
       //Create Trajectory
       Trajectory trajectory = util.getTrajectory("paths/ForwardPathRight.wpilib.json");
@@ -435,7 +435,7 @@ public class RobotContainer {
               
   }
 
-  private void registNamedCommands(){
+  private void registerNamedCommands(){
     Utils util = new Utils();
     NamedCommands.registerCommand("scoreHighGoal", util.scoreHighGoal(extender, claw, arm));
     NamedCommands.registerCommand("foldArm", util.retractArm(extender, claw, arm));
