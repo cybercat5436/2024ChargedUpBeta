@@ -1,0 +1,113 @@
+{
+  "version": 1.0,
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 1.5029008623284175,
+        "y": 4.9431503985349545
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 2.6929008623284174,
+        "y": 4.9431503985349545
+      },
+      "isLocked": false
+    },
+    {
+      "anchor": {
+        "x": 5.161478342487936,
+        "y": 5.089533763133281
+      },
+      "prevControl": {
+        "x": 4.019664480765341,
+        "y": 4.303001062721381
+      },
+      "nextControl": {
+        "x": 5.689476868645578,
+        "y": 5.453242875900357
+      },
+      "isLocked": false
+    },
+    {
+      "anchor": {
+        "x": 7.007316756658254,
+        "y": 4.9431503985349545
+      },
+      "prevControl": {
+        "x": 6.757377552127519,
+        "y": 6.443160529846923
+      },
+      "nextControl": null,
+      "isLocked": false
+    }
+  ],
+  "rotationTargets": [
+    {
+      "waypointRelativePos": 0.65,
+      "rotationDegrees": 15.0
+    },
+    {
+      "waypointRelativePos": 0.5,
+      "rotationDegrees": 0
+    },
+    {
+      "waypointRelativePos": 1.25,
+      "rotationDegrees": -41.35978882404627
+    },
+    {
+      "waypointRelativePos": 2.0,
+      "rotationDegrees": 0
+    }
+  ],
+  "constraintZones": [
+    {
+      "name": "New Constraints Zone",
+      "minWaypointRelativePos": 1.8,
+      "maxWaypointRelativePos": 2.0,
+      "constraints": {
+        "maxVelocity": 1.0,
+        "maxAcceleration": 1.0,
+        "maxAngularVelocity": 100.0,
+        "maxAngularAcceleration": 100.0
+      }
+    }
+  ],
+  "eventMarkers": [
+    {
+      "name": "FoldArm",
+      "waypointRelativePos": 0,
+      "command": {
+        "type": "sequential",
+        "data": {
+          "commands": [
+            {
+              "type": "named",
+              "data": {
+                "name": "scoreHighGoal"
+              }
+            },
+            {
+              "type": "named",
+              "data": {
+                "name": "foldArm"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 4.5,
+    "maxAcceleration": 4.5,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -77.58880831975031
+  },
+  "reversed": false,
+  "folder": null,
+  "previewStartingState": null
+}
