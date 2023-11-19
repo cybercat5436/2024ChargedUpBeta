@@ -60,7 +60,7 @@
     "rotation": 0
   },
   "reversed": false,
-  "folder": null,
+  "folder": "DebugPaths",
   "previewStartingState": {
     "rotation": 90.0,
     "velocity": 0

@@ -20,7 +20,7 @@
         {
           "type": "path",
           "data": {
-            "pathName": "BTI_Path1"
+            "pathName": "LeftGrabAndScorePath1"
           }
         },
         {
@@ -32,5 +32,5 @@
       ]
     }
   },
-  "folder": null
+  "folder": "ChargedUp"
 }

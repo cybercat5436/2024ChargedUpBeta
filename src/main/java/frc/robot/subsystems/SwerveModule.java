@@ -12,6 +12,7 @@ import frc.robot.enums.WheelPosition;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 
@@ -37,14 +38,18 @@ public class SwerveModule implements Sendable{
   private final RelativeEncoder turningEncoder;
 
   private final PIDController turningPidController;
+  private final SparkMaxPIDController velocityPidController;
 
   private final AnalogInput absoluteEncoder;
   private final boolean absoluteEncoderReversed;
   private final double absoluteEncoderOffsetRad;
 
   public final WheelPosition wheelPosition;
+
+  public SwerveModuleState desiredState = new SwerveModuleState();
   
-  
+  public double kP = 0.45;
+  public double kFF = 0.225;
 
   /** Creates a new SwerveModule. */
   public SwerveModule(WheelPosition wheelPosition, int driveMotorId, int turningMotorId, boolean driveMotorReversed, boolean turningMotorReversed,
@@ -83,6 +88,10 @@ public class SwerveModule implements Sendable{
 
     turningPidController = new PIDController(ModuleConstants.kPTurning, 0, 0);
     turningPidController.enableContinuousInput(-Math.PI, Math.PI);
+
+    velocityPidController = driveMotor.getPIDController();
+    velocityPidController.setP(kP);
+    velocityPidController.setFF(kFF); 
 
     resetDriveEncoders();
     resetTurningEncoderWithAbsolute();
@@ -151,8 +160,13 @@ public class SwerveModule implements Sendable{
 
 
 
-  public SwerveModuleState getState() {
+  public SwerveModuleState getActualState() {
     return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningPosition()));
+  }
+
+  public SwerveModuleState getDesiredState(){
+      return new SwerveModuleState(this.desiredState.speedMetersPerSecond, this.desiredState.angle);
+
   }
 
   //definetly ot right but gets rid of error
@@ -165,17 +179,24 @@ public class SwerveModule implements Sendable{
    * @param state
    */
   public void setDesiredState(SwerveModuleState state){
-    
-    if (Math.abs(state.speedMetersPerSecond) < 0.001) {
-      stop();
+    // set the desired state prior to processing
+    this.desiredState = state;
+
+    // set both motors to zero if below speed threshold
+    if (Math.abs(state.speedMetersPerSecond) < 0.01) {
+      this.desiredState = new SwerveModuleState(0.0, state.angle);
+      this.stop();
       return;
     }
 
-    state = SwerveModuleState.optimize(state, getState().angle);
+    state = SwerveModuleState.optimize(state, getActualState().angle);
 
-    double driveMotorPower = state.speedMetersPerSecond /DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
+    // set drive power using linear correlation with max speed
+    // double driveMotorPower = state.speedMetersPerSecond /DriveConstants.kPhysicalMaxSpeedMetersPerSecond;
+    // driveMotor.set(driveMotorPower);
     
-    driveMotor.set(driveMotorPower);
+    // set drive power using velocity PID controller control
+    velocityPidController.setReference(state.speedMetersPerSecond, CANSparkMax.ControlType.kVelocity);
 
     turningMotor.set(turningPidController.calculate(turningEncoder.getPosition(), state.angle.getRadians()));
 
@@ -216,11 +237,27 @@ public class SwerveModule implements Sendable{
     turningMotor.set(0);
   }
 
+  public String getStateStringNoLabel(SwerveModuleState state){
+    return String.format("%6.2f m/s @ %6.1f deg", state.speedMetersPerSecond, state.angle.getDegrees());
+
+  }
+
   @Override
   public void initSendable(SendableBuilder builder) {
     // TODO Auto-generated method stub
     builder.addDoubleProperty("Power From Module", () -> this.getDriveVelocity(), null);
     // builder.addDoubleProperty("Physical Restraints", () -> DriveConstants.kPhysicalMaxAngularSpeedRadiansPerSecond, null);
+  }
+
+  @Override
+  public String toString(){
+    String label = this.wheelPosition.name();
+    return String.format("%s : %s", label, this.getStateStringNoLabel(this.getActualState()));
+  }
+
+  public String toStringDesiredState(){
+    String label = this.wheelPosition.name();
+    return String.format("%s : %s", label, this.getStateStringNoLabel(this.getDesiredState()));
   }
 
 

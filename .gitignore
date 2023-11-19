@@ -173,3 +173,4 @@ out/
 simgui-ds.json
 .gitignore
 simgui.json
+*.wpilog

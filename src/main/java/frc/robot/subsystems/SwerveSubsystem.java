@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import java.util.ArrayList;
+import java.util.function.Supplier;
 
 import com.kauailabs.navx.frc.AHRS;
 import com.pathplanner.lib.auto.AutoBuilder;
@@ -25,7 +26,10 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.SPI;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
@@ -131,6 +135,8 @@ public class SwerveSubsystem extends SubsystemBase{
     PIDController yController;
     ProfiledPIDController thetaController;
 
+    private Field2d field2d = new Field2d();  // track field position on dashboard
+
     public SwerveSubsystem(){
         new Thread(() -> {
             try {
@@ -158,6 +164,12 @@ public class SwerveSubsystem extends SubsystemBase{
 
         // init for Path Planner
         this.initPathPlanner();
+
+        // for simulation 
+        SmartDashboard.putBoolean("RobotBase.isReal: ", RobotBase.isReal());
+
+        // for tracking robot position on dashboard
+        SmartDashboard.putData("Field", field2d);
 
         //Register the sendables
         SendableRegistry.addLW(this, this.getClass().getSimpleName(), this.getClass().getSimpleName());
@@ -339,8 +351,13 @@ private void initPathPlanner(){
 public void driveRobotRelative(ChassisSpeeds chassisSpeeds){
     // Convert the chassis speeds to module states
     SwerveModuleState[] swerveModuleStates = DriveConstants.kDriveKinematics.toSwerveModuleStates(chassisSpeeds);
+    // System.out.println("FL: " + swerveModuleStates[0]);
     // apply those states to the swerve modles
     this.setModuleStates(swerveModuleStates);
+    // print the swerve subsystem (all module states)
+    // System.out.println(this.toString());
+    // DataLogManager.log(this.toString());
+
 }
 
 /**
@@ -348,28 +365,16 @@ public void driveRobotRelative(ChassisSpeeds chassisSpeeds){
  * @return
  */
 public ChassisSpeeds getRobotRelativeSpeeds(){
-    return DriveConstants.kDriveKinematics.toChassisSpeeds(frontLeft.getState(),
-                                                           frontRight.getState(),
-                                                           backLeft.getState(),
-                                                           backRight.getState());
+    return DriveConstants.kDriveKinematics.toChassisSpeeds(frontLeft.getActualState(),
+                                                           frontRight.getActualState(),
+                                                           backLeft.getActualState(),
+                                                           backRight.getActualState());
 } 
 
 
 @Override
 public void periodic() {
     odometry.update(getRotation2d(), getModulePositions());
-
-    // SmartDashboard.putString("Robot Location", getPose().getTranslation().toString());
-    // SmartDashboard.putNumber("Robot Location x:", getPose().getX());
-    // SmartDashboard.putNumber("Robot Location Y", getPose().getY());
-    // System.out.println("Robot Locaton X:" + getPose().getX());
-    // System.out.println("Robot Location Y:" + getPose().getY());
-    // for(int i = 0; i < modulePositions.length; i++ ){
-    //     System.out.println(modulePositions[i]);
-    // }
-    
-    // SmartDashboard.putNumber("Loop Count: ", loopCount++);
-    // DataLogManager.log(String.format("Loop count %d", loopCount));
 
     for (SwerveModule swerveModule: swerveModules){
         // SmartDashboard.putNumber(String.format("%s Angle", swerveModule.wheelPosition.name()), swerveModule.getAbsoluteEncoderRadians());
@@ -380,57 +385,47 @@ public void periodic() {
         // SmartDashboard.putNumber(String.format("%s Target Angle", swerveModule.wheelPosition.name()), swerveModule.getState().angle.getRadians());
         SmartDashboard.putNumber(String.format("%s Velocity", swerveModule.wheelPosition.name()), swerveModule.getDriveVelocity());
     }
-    // SmartDashboard.putNumber("FL Angle", frontLeft.getAbsoluteEncoderRadians());
-    // SmartDashboard.putNumber("FL Turning Encoder", frontLeft.getTurningPosition());
-    // SmartDashboard.putNumber("FR Angle", frontRight.getAbsoluteEncoderRadians());
-    // SmartDashboard.putNumber("BL Angle", backLeft.getAbsoluteEncoderRadians());
-    // SmartDashboard.putNumber("BR Angle", backRight.getAbsoluteEncoderRadians());
-    // SmartDashboard.putNumber("BL Encoder Voltage", backLeft.getAbsoluteEncoder().getVoltage());
-    // SmartDashboard.putNumber("5V RobotController", RobotController.getCurrent5V());
-    
-    // SmartDashboard.putNumber("FL Target Angle", moduleStates.get(0).angle.getRadians());
-    // SmartDashboard.putNumber("Gyro", gyro.getAngle());
-   // SmartDashboard.putNumber("Mystery", getHeading());
        SmartDashboard.putNumber ("Pitch", gyro.getPitch());
-//    SmartDashboard.putNumber ("Roll", gyro.getRoll());
-   
-    // DataLogManager.log(String.format("Back Left Encoder Voltage %f", backLeft.getAbsoluteEncoder().getVoltage()));
-    // DataLogManager.log(String.format("Back Right Encoder Voltage %f", backRight.getAbsoluteEncoder().getVoltage()));
-
-
-    // DataLogManager.log(String.format("Back left Angle %f", backLeft.getAbsoluteEncoderRadians()));
-    // DataLogManager.log(String.format("Back right Angle %f", backRight.getAbsoluteEncoderRadians()));
-    // DataLogManager.log(String.format("Front left Angle %f", frontLeft.getAbsoluteEncoderRadians()));
-    // DataLogManager.log(String.format("Front right Angle %f", frontRight.getAbsoluteEncoderRadians()));
-
-    // DataLogManager.log(String.format("Voltage %f", RobotController.getCurrent5V()));
-
-    // SmartDashboard.putNumber("Integrator Sum", integratorSum);
 }
 
 @Override
 public void initSendable(SendableBuilder builder) {
     // TODO Auto-generated method stub
     super.initSendable(builder);
-    // builder.addDoubleProperty("FL Power", () -> frontLeft.getDriveVelocity(), null);
-    // builder.addDoubleProperty("FR Power", () -> frontRight.getDriveVelocity(), null);
-    // builder.addDoubleProperty("BL Power", () -> backLeft.getDriveVelocity(), null);
-    // builder.addDoubleProperty("BR Power", () -> backRight.getDriveVelocity(), null);
-     builder.addDoubleProperty("kPXController", () -> kPXController, (value) -> kPXController = value);
-     builder.addDoubleProperty("kPYController", () -> kPYController, (value) -> kPYController = value);
-     builder.addDoubleProperty("kThetaController", () -> kPThetaController, (value) -> kPThetaController = value);
+    builder.addDoubleProperty("kPXController", () -> kPXController, (value) -> kPXController = value);
+    builder.addDoubleProperty("kPYController", () -> kPYController, (value) -> kPYController = value);
+    builder.addDoubleProperty("kThetaController", () -> kPThetaController, (value) -> kPThetaController = value);
 
     builder.addDoubleProperty("balanceConstant", () -> balanceConstant, (value) -> balanceConstant = value);
-    // builder.addDoubleProperty("Roll Rate of Change", () -> rollROC, null);
-//    builder.addDoubleProperty("Roll Rate of Change Constant", () -> rollROCConstant, (value) -> rollROCConstant = value);
-   builder.addDoubleProperty("Roll Rate of Change Constant", () -> pitchROCConstant, (value) -> pitchROCConstant = value);
+    builder.addDoubleProperty("Roll Rate of Change Constant", () -> pitchROCConstant, (value) -> pitchROCConstant = value);
 
     builder.addDoubleProperty("feed forward", () -> feedForwardConstant, (value) -> feedForwardConstant = value);
     builder.addStringProperty("Odometry Position", () -> this.odometry.getPoseMeters().toString(), null);
+    builder.addStringProperty("Swerve Module States", () -> this.toString(), null);
+}
 
-    // builder.addDoubleProperty("Integrator Constant", () -> integratorConstant, (value) -> integratorConstant = value);
-
-
+public String toString(){
+    StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder.append ("\n");
+    stringBuilder.append ("        ");  // Space for left column headers
+    stringBuilder.append ("           LEFT                       RIGHT");
+    stringBuilder.append ("\n");
+    stringBuilder.append ("      | ");  // Space for left column headers
+    stringBuilder.append ("---------------------------------------------------");
+    stringBuilder.append ("\n");
+    stringBuilder.append ("FRONT | ");
+    stringBuilder.append (frontLeft.getStateStringNoLabel(frontLeft.getDesiredState()) + "  |  " + frontRight.getStateStringNoLabel(frontRight.getDesiredState()));
+    stringBuilder.append ("\n");
+    stringBuilder.append ("      | ");  // Space for left column headers
+    stringBuilder.append ("---------------------------------------------------");
+    stringBuilder.append ("\n");
+    stringBuilder.append ("BACK  | ");
+    stringBuilder.append (backLeft.getStateStringNoLabel(backLeft.getDesiredState()) + "  |  " + backRight.getStateStringNoLabel(backRight.getDesiredState()));
+    stringBuilder.append ("\n");
+    stringBuilder.append ("      | ");  // Space for left column headers
+    stringBuilder.append ("---------------------------------------------------");
+    stringBuilder.append ("\n");
+    return stringBuilder.toString();
 
 }
 
